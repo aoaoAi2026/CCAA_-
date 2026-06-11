@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">认证通用基础学习</string>
+    <string name="title_activity_main">认证通用基础学习</string>
+    <string name="package_name">com.certification.studyapp</string>
+    <string name="custom_url_scheme">com.certification.studyapp</string>
+</resources>

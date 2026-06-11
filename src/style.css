@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* 动画效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* 卡片悬浮效果 */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 进度条动画 */
+.progress-bar {
+  transition: width 0.5s ease-out;
+}
+
+/* 答题选项样式 */
+.option-btn {
+  transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+  transform: scale(1.02);
+}
+
+.option-btn.selected {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.option-btn.correct {
+  background-color: #10b981;
+  color: white;
+}
+
+.option-btn.wrong {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* 关卡进度 */
+.level-progress {
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+}
+
+/* 成就徽章 */
+.achievement-badge {
+  animation: badge-pop 0.5s ease-out;
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 星星评分 */
+.star-rating {
+  color: #fbbf24;
+}
+
+/* 每日计划卡片 */
+.day-card {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+.day-card.completed {
+  background: linear-gradient(145deg, #d1fae5, #a7f3d0);
+}
+
+.day-card.today {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
