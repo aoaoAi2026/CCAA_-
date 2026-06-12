@@ -26,14 +26,13 @@ const router = createRouter({
   }
 })
 
+// 从 localStorage 读取登录状态（与 stores/index.js 保持一致）
 function isLogin() {
   try {
-    const authState = localStorage.getItem('auth_state_v1')
-    if (authState) {
-      const { token, user } = JSON.parse(authState)
-      return !!token && !!user
-    }
-    return false
+    const raw = localStorage.getItem('auth_state_v1')
+    if (!raw) return false
+    const parsed = JSON.parse(raw)
+    return !!(parsed && parsed.token && parsed.user)
   } catch (e) {
     return false
   }
