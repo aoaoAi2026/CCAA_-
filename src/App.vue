@@ -7,7 +7,7 @@
             <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
               认
             </div>
-            <span class="text-lg font-semibold text-gray-800 hidden sm:inline">认识通用基础 · 学习平台</span>
+            <span class="text-lg font-semibold text-gray-800 hidden sm:inline">认证通用基础 · 学习平台</span>
           </router-link>
 
           <nav class="hidden md:flex items-center gap-1">
@@ -16,9 +16,7 @@
               :key="item.path"
               :to="item.path"
               class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-              :class="$route.path === item.path || ($route.path.startsWith(item.path) && item.path !== '/')
-                ? 'text-blue-600 bg-blue-50'
-                : 'text-gray-600 hover:bg-gray-100'"
+              :class="matchNav(item.path) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-100'"
             >
               <component :is="item.icon" class="inline-block w-4 h-4 mr-1" />
               {{ item.name }}
@@ -26,15 +24,15 @@
           </nav>
 
           <div class="flex items-center gap-2">
-            <template v-if="auth.isLogin">
+            <template v-if="isLoggedIn">
               <router-link
                 to="/profile"
                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm hover:bg-blue-100 transition"
               >
                 <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                  {{ auth.avatarChar }}
+                  {{ avatarChar }}
                 </div>
-                <span class="hidden sm:inline">{{ auth.displayName }}</span>
+                <span class="hidden sm:inline">{{ displayName }}</span>
               </router-link>
               <button
                 @click="handleLogout"
@@ -59,11 +57,7 @@
     </header>
 
     <main class="flex-1">
-      <router-view v-slot="{ Component, route }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" :key="route.fullPath" />
-        </transition>
-      </router-view>
+      <router-view />
     </main>
 
     <footer class="bg-white border-t mt-12 py-8">
@@ -72,7 +66,7 @@
           <div>
             <h3 class="text-sm font-semibold text-gray-800 mb-3">关于平台</h3>
             <p class="text-sm text-gray-600 leading-relaxed">
-              为审核员考试量身打造的「认识通用基础」学习平台，提供系统化的知识点、章节练习和每日学习计划。
+              为审核员考试量身打造的「认证通用基础」学习平台，提供系统化的知识点、章节练习和每日学习计划。
             </p>
           </div>
           <div>
@@ -89,7 +83,7 @@
           </div>
         </div>
         <div class="text-center text-xs text-gray-500 mt-8 border-t pt-4">
-          © 2026 认识通用基础学习平台 · 仅供学习参考
+          © 2026 认证通用基础学习平台 · 仅供学习参考
         </div>
       </div>
     </footer>
@@ -99,16 +93,27 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Home as HomeIcon, BookOpen, Play, Target, AlertCircle, Gamepad2, TrendingUp, FolderOpen, User
 } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from './stores/index.js'
 import AppToast from './components/AppToast.vue'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
+
+const isLoggedIn = computed(() => auth.isLogin)
+const avatarChar = computed(() => auth.avatarChar)
+const displayName = computed(() => auth.displayName)
+
+function matchNav(path) {
+  if (path === '/') return route.path === '/'
+  return route.path === path || route.path.startsWith(path)
+}
 
 const navItems = [
   { path: '/', name: '首页', icon: HomeIcon },

@@ -83,8 +83,8 @@
               </div>
             </div>
 
-            <!-- 选择题选项 -->
-            <div v-if="currentQuestion.options" class="space-y-3 mt-4">
+            <!-- 单选题/判断题选项 (点击即答) -->
+            <div v-if="currentQuestion.options && currentQuestion.type !== 'multiple'" class="space-y-3 mt-4">
               <div 
                 v-for="(option, idx) in currentQuestion.options" 
                 :key="idx"
@@ -98,8 +98,39 @@
                 </span>
                 <span class="flex-1">{{ option }}</span>
                 <CheckCircle v-if="showResults && isCorrectAnswer(idx)" class="w-5 h-5 text-green-500" />
-                <XCircle v-else-if="showResults && userAnswers[currentQuestionIndex] === idx && !isCorrectAnswer(idx)" class="w-5 h-5 text-red-500" />
+                <XCircle v-else-if="showResults && !isMultiAnswer && userAnswers[currentQuestionIndex] === idx && !isCorrectAnswer(idx)" class="w-5 h-5 text-red-500" />
               </div>
+            </div>
+
+            <!-- 多选题选项 (可多选, 需提交) -->
+            <div v-else-if="currentQuestion.type === 'multiple'" class="space-y-3 mt-4">
+              <div 
+                v-for="(option, idx) in currentQuestion.options" 
+                :key="idx"
+                class="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all"
+                :class="getMultiOptionClass(idx)"
+                @click="toggleMultiAnswer(idx)"
+              >
+                <span class="w-8 h-8 rounded flex items-center justify-center mr-4 border-2"
+                  :class="getMultiBadgeClass(idx)">
+                  <Check v-if="!showResults && currentMultiSelection.has(idx)" class="w-5 h-5" />
+                  <span v-else-if="!showResults">{{ optionLabels[idx] }}</span>
+                  <Check v-else-if="isCorrectAnswer(idx)" class="w-5 h-5" />
+                  <X v-else-if="currentMultiSelection.has(idx) && !isCorrectAnswer(idx)" class="w-5 h-5" />
+                  <span v-else class="text-gray-400">{{ optionLabels[idx] }}</span>
+                </span>
+                <span class="flex-1">{{ option }}</span>
+              </div>
+              <!-- 多选题提交按钮 -->
+              <button
+                v-if="!showResults"
+                @click="submitMultiAnswer"
+                :disabled="currentMultiSelection.size === 0"
+                class="w-full mt-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <CheckCircle class="w-5 h-5 mr-2" />
+                提交答案（已选 {{ currentMultiSelection.size }} 项）
+              </button>
             </div>
 
             <!-- 简答题答题区 -->
@@ -123,7 +154,13 @@
               <!-- 选择题答案 -->
               <template v-if="currentQuestion.options">
                 <p class="text-green-700">
-                  <span class="font-medium">正确答案：</span>{{ optionLabels[currentQuestion.answer] }}
+                  <span class="font-medium">正确答案：</span>
+                  <template v-if="currentQuestion.type === 'multiple' && Array.isArray(currentQuestion.answer)">
+                    {{ currentQuestion.answer.map(i => optionLabels[i]).join('、') }}
+                  </template>
+                  <template v-else>
+                    {{ optionLabels[currentQuestion.answer] }}
+                  </template>
                 </p>
                 <p class="text-green-700 mt-2">{{ currentQuestion.explanation }}</p>
               </template>
@@ -215,6 +252,13 @@
           >
             查看解析
           </button>
+          <router-link
+            v-if="wrongNotebookAddedCount > 0"
+            to="/wrong-notebook"
+            class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            查看错题本
+          </router-link>
           <button 
             @click="backToSelect"
             class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
@@ -252,22 +296,31 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Clock, CheckCircle, XCircle, Lightbulb, ChevronLeft, ChevronRight, Trophy } from 'lucide-vue-next'
+import { ref, computed, onUnmounted } from 'vue'
+import { Clock, CheckCircle, XCircle, Lightbulb, ChevronLeft, ChevronRight, Trophy, Check, X } from 'lucide-vue-next'
 import { questions } from '../data/questions'
+import { courseData } from '../data/courseData'
+import { wrongApi } from '../utils/request.js'
+import { useToastStore } from '../stores/index.js'
 
 const examState = ref('select') // select, testing, result
 const currentExam = ref(null)
 const examQuestions = ref([])
 const currentQuestionIndex = ref(0)
-const userAnswers = ref({})
+const userAnswers = ref({})          // 单选/判断答案
+const userMultiAnswers = ref({})     // 多选题答案 { index: [sorted array] }
 const userEssayAnswers = ref({})
+const currentMultiSelection = ref(new Set()) // 当前多选题的选中状态
 const remainingTime = ref(0)
 const showResults = ref(false)
 const showConfirmEnd = ref(false)
+const wrongNotebookAddedCount = ref(0)
+const wrongNotebookSynced = ref(false)
+const endingExam = ref(false)
+const toast = useToastStore()
 let timer = null
 
-const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F']
+const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 
 const mockExams = [
   { name: '基础模拟测试', questions: 50, duration: 60, chapters: [1, 2, 3, 4], essayCount: 2 },
@@ -276,27 +329,55 @@ const mockExams = [
 ]
 
 const currentQuestion = computed(() => examQuestions.value[currentQuestionIndex.value] || {})
+const isMultiAnswer = computed(() => currentQuestion.value.type === 'multiple')
+
+// 判断某个选项是否正确答案
+function isCorrectAnswer(idx) {
+  const q = currentQuestion.value
+  if (!q) return false
+  if (q.type === 'multiple' && Array.isArray(q.answer)) {
+    return q.answer.includes(idx)
+  }
+  return q.answer === idx
+}
 
 const score = computed(() => {
   let correct = 0
   let totalEssayScore = 0
+  const choiceQs = examQuestions.value.filter(q => q.type !== 'essay')
   
   examQuestions.value.forEach((q, idx) => {
     if (q.type === 'essay') {
       totalEssayScore += q.score || 10
-    } else if (userAnswers.value[idx] === q.answer) {
+      return
+    }
+    const isMulti = q.type === 'multiple' && Array.isArray(q.answer)
+    const userAns = isMulti ? userMultiAnswers.value[idx] : userAnswers.value[idx]
+    if (userAns === undefined) return // 未作答
+    
+    if (isMulti) {
+      if (JSON.stringify([...userAns].sort()) === JSON.stringify([...q.answer].sort())) correct++
+    } else if (userAns === q.answer) {
       correct++
     }
   })
   
-  const choiceScore = Math.round((correct / examQuestions.value.filter(q => q.type !== 'essay').length) * 60)
+  const choiceScore = choiceQs.length > 0 ? Math.round((correct / choiceQs.length) * 60) : 0
   return Math.min(choiceScore + totalEssayScore, 100)
 })
 
 const correctCount = computed(() => {
   let count = 0
   examQuestions.value.forEach((q, idx) => {
-    if (q.type !== 'essay' && userAnswers.value[idx] === q.answer) count++
+    if (q.type === 'essay') return
+    const isMulti = q.type === 'multiple' && Array.isArray(q.answer)
+    const userAns = isMulti ? userMultiAnswers.value[idx] : userAnswers.value[idx]
+    if (userAns === undefined) return
+    if (isMulti) {
+      if (JSON.stringify([...userAns].sort()) === JSON.stringify([...q.answer].sort())) count++
+    } else if (userAns === q.answer) {
+      count++
+    }
   })
   return count
 })
@@ -312,62 +393,124 @@ const accuracy = computed(() => {
 })
 
 const answeredCount = computed(() => {
-  let count = Object.keys(userAnswers.value).length
+  let count = Object.keys(userAnswers.value).length + Object.keys(userMultiAnswers.value).length
   Object.keys(userEssayAnswers.value).forEach(key => {
-    if (userEssayAnswers.value[key] && userEssayAnswers.value[key].trim()) {
-      count++
-    }
+    if (userEssayAnswers.value[key] && userEssayAnswers.value[key].trim()) count++
   })
   return count
 })
+
+const getChapterName = (chapterId) => {
+  return courseData.chapters.find((c) => c.id === chapterId)?.name || `第${chapterId}章`
+}
+
+function buildWrongPayload(question, idx) {
+  const isMulti = question.type === 'multiple' && Array.isArray(question.answer)
+  const userAns = isMulti ? userMultiAnswers.value[idx] : userAnswers.value[idx]
+  return {
+    source: 'mock-exam',
+    source_name: currentExam.value?.name || '模拟考试',
+    chapter_id: question.chapter_id,
+    chapter_name: question.chapter_name || '',
+    question_id: question.id,
+    question_type: question.type || 'single',
+    question: question.question,
+    options: question.options || [],
+    user_answer: isMulti ? JSON.stringify(userAns || []) : userAns,
+    correct_answer: isMulti ? JSON.stringify(question.answer) : question.answer,
+    explanation: question.explanation
+  }
+}
+
+const syncWrongQuestionsToNotebook = async () => {
+  if (wrongNotebookSynced.value) return
+  const wrongItems = []
+  for (let idx = 0; idx < examQuestions.value.length; idx++) {
+    const q = examQuestions.value[idx]
+    if (!q || q.type === 'essay') continue
+    const isMulti = q.type === 'multiple' && Array.isArray(q.answer)
+    const userAns = isMulti ? userMultiAnswers.value[idx] : userAnswers.value[idx]
+    if (userAns === undefined) continue
+    const isCorrect = isMulti
+      ? JSON.stringify([...userAns].sort()) === JSON.stringify([...q.answer].sort())
+      : userAns === q.answer
+    if (isCorrect) continue
+    wrongItems.push(buildWrongPayload(q, idx))
+  }
+  if (wrongItems.length > 0) {
+    await wrongApi.batchAdd(wrongItems)
+  }
+  wrongNotebookAddedCount.value = wrongItems.length
+  wrongNotebookSynced.value = true
+  if (wrongItems.length > 0) toast.show(`已自动加入错题本 ${wrongItems.length} 题`, 'info')
+}
 
 const startExam = (exam) => {
   currentExam.value = exam
   remainingTime.value = exam.duration * 60
   userAnswers.value = {}
+  userMultiAnswers.value = {}
   userEssayAnswers.value = {}
+  currentMultiSelection.value = new Set()
   currentQuestionIndex.value = 0
   showResults.value = false
+  wrongNotebookAddedCount.value = 0
+  wrongNotebookSynced.value = false
+  endingExam.value = false
   
-  // 从指定章节随机抽取选择题
   const allChoiceQuestions = []
   exam.chapters.forEach(chapter => {
-    const chapterQuestions = questions[`chapter${chapter}`] || []
-    allChoiceQuestions.push(...chapterQuestions)
+    // 单选题
+    const singles = (questions[`chapter${chapter}`] || []).map(q => ({
+      ...q, chapter_id: chapter, chapter_name: getChapterName(chapter), question_type: q.type || 'single'
+    }))
+    allChoiceQuestions.push(...singles)
+    // 多选题
+    const multis = (questions.multipleChoice || []).filter(q => q.chapter === chapter).map(q => ({
+      ...q, chapter_id: chapter, chapter_name: getChapterName(chapter), question_type: 'multiple'
+    }))
+    allChoiceQuestions.push(...multis)
+    // 判断题
+    const judges = (questions.trueFalse || []).filter(q => q.chapter === chapter).map(q => ({
+      ...q, chapter_id: chapter, chapter_name: getChapterName(chapter), question_type: 'judge'
+    }))
+    allChoiceQuestions.push(...judges)
   })
   
-  // 随机打乱并选取选择题
   const shuffledChoice = allChoiceQuestions.sort(() => Math.random() - 0.5)
-  const selectedChoice = shuffledChoice.slice(0, exam.questions - exam.essayCount)
+  const totalMC = exam.questions - exam.essayCount
+  const selectedChoice = shuffledChoice.slice(0, Math.min(totalMC, shuffledChoice.length))
   
   // 随机抽取简答题
   const allEssayQuestions = questions.essay || []
   const shuffledEssay = allEssayQuestions.sort(() => Math.random() - 0.5)
-  const selectedEssay = shuffledEssay.slice(0, exam.essayCount)
+  const selectedEssay = shuffledEssay.slice(0, exam.essayCount).map(q => ({
+    ...q, chapter_id: null, chapter_name: '简答题', question_type: q.type || 'essay'
+  }))
   
-  // 混合选择题和简答题
   examQuestions.value = [...selectedChoice, ...selectedEssay].sort(() => Math.random() - 0.5)
-  
   examState.value = 'testing'
   
-  // 启动计时器
   timer = setInterval(() => {
-    if (remainingTime.value > 0) {
-      remainingTime.value--
-    } else {
-      endExam()
-    }
+    if (remainingTime.value > 0) remainingTime.value--
+    else endExam()
   }, 1000)
 }
 
-const endExam = () => {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
+const endExam = async () => {
+  if (endingExam.value) return
+  endingExam.value = true
+  if (timer) { clearInterval(timer); timer = null }
   showConfirmEnd.value = false
   showResults.value = true
-  examState.value = 'result'
+  try {
+    await syncWrongQuestionsToNotebook()
+  } catch (e) {
+    toast.show('同步错题本失败：' + e.message, 'error')
+  } finally {
+    examState.value = 'result'
+    endingExam.value = false
+  }
 }
 
 const reviewExam = () => {
@@ -382,99 +525,123 @@ const backToSelect = () => {
   examQuestions.value = []
 }
 
+// 单选题/判断题选择
 const selectAnswer = (idx) => {
-  if (showResults.value) return
+  if (showResults.value || isMultiAnswer.value) return
   userAnswers.value[currentQuestionIndex.value] = idx
+}
+
+// 多选题切换选项
+const toggleMultiAnswer = (idx) => {
+  if (showResults.value) return
+  const newSet = new Set(currentMultiSelection.value)
+  if (newSet.has(idx)) newSet.delete(idx)
+  else newSet.add(idx)
+  currentMultiSelection.value = newSet
+}
+
+// 多选题提交答案
+const submitMultiAnswer = () => {
+  if (showResults.value || currentMultiSelection.value.size === 0) return
+  const sorted = [...currentMultiSelection.value].sort()
+  userMultiAnswers.value[currentQuestionIndex.value] = sorted
 }
 
 const goToQuestion = (idx) => {
   currentQuestionIndex.value = idx
+  // 恢复当前题目的多选状态
+  const saved = userMultiAnswers.value[idx]
+  currentMultiSelection.value = saved ? new Set(saved) : new Set()
 }
 
 const prevQuestion = () => {
   if (currentQuestionIndex.value > 0) {
     currentQuestionIndex.value--
+    const saved = userMultiAnswers.value[currentQuestionIndex.value]
+    currentMultiSelection.value = saved ? new Set(saved) : new Set()
   }
 }
 
 const nextQuestion = () => {
   if (currentQuestionIndex.value < examQuestions.value.length - 1) {
     currentQuestionIndex.value++
+    const saved = userMultiAnswers.value[currentQuestionIndex.value]
+    currentMultiSelection.value = saved ? new Set(saved) : new Set()
   } else {
     endExam()
   }
 }
 
-const isCorrectAnswer = (idx) => {
-  return currentQuestion.value.answer === idx
-}
-
 const getQuestionClass = (idx) => {
   const q = examQuestions.value[idx]
+  if (!q) return 'bg-gray-100 text-gray-600'
   if (q.type === 'essay') {
-    if (userEssayAnswers.value[idx] && userEssayAnswers.value[idx].trim()) {
-      return 'bg-purple-100 text-purple-700'
-    }
-  } else if (userAnswers.value[idx] !== undefined) {
-    return 'bg-green-100 text-green-700'
+    return userEssayAnswers.value[idx]?.trim() ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
   }
-  if (idx === currentQuestionIndex.value) {
-    return 'bg-blue-500 text-white'
-  }
+  const isMulti = q.type === 'multiple' && Array.isArray(q.answer)
+  const hasAnswer = isMulti
+    ? userMultiAnswers.value[idx] !== undefined
+    : userAnswers.value[idx] !== undefined
+  if (hasAnswer) return 'bg-green-100 text-green-700'
+  if (idx === currentQuestionIndex.value) return 'bg-blue-500 text-white'
   return 'bg-gray-100 text-gray-600'
 }
 
 const getOptionClass = (idx) => {
   if (showResults.value) {
-    if (isCorrectAnswer(idx)) {
-      return 'border-green-500 bg-green-50'
-    }
-    if (userAnswers.value[currentQuestionIndex.value] === idx) {
-      return 'border-red-500 bg-red-50'
-    }
+    if (isCorrectAnswer(idx)) return 'border-green-500 bg-green-50'
+    if (userAnswers.value[currentQuestionIndex.value] === idx) return 'border-red-500 bg-red-50'
     return 'border-gray-200 bg-gray-50'
   }
-  if (userAnswers.value[currentQuestionIndex.value] === idx) {
-    return 'border-blue-500 bg-blue-50'
-  }
+  if (userAnswers.value[currentQuestionIndex.value] === idx) return 'border-blue-500 bg-blue-50'
   return 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
 }
 
 const getOptionBadgeClass = (idx) => {
   if (showResults.value) {
-    if (isCorrectAnswer(idx)) {
-      return 'border-green-500 bg-green-500 text-white'
-    }
-    if (userAnswers.value[currentQuestionIndex.value] === idx) {
-      return 'border-red-500 bg-red-500 text-white'
-    }
+    if (isCorrectAnswer(idx)) return 'border-green-500 bg-green-500 text-white'
+    if (userAnswers.value[currentQuestionIndex.value] === idx) return 'border-red-500 bg-red-500 text-white'
     return 'border-gray-300 text-gray-600'
   }
-  if (userAnswers.value[currentQuestionIndex.value] === idx) {
-    return 'border-blue-500 bg-blue-500 text-white'
-  }
+  if (userAnswers.value[currentQuestionIndex.value] === idx) return 'border-blue-500 bg-blue-500 text-white'
   return 'border-gray-300 text-gray-600'
 }
 
-const getQuestionType = (type) => {
-  const types = {
-    essay: '简答题',
-    single: '单选题',
-    multiple: '多选题',
-    judge: '判断题'
+// 多选题选项样式
+const getMultiOptionClass = (idx) => {
+  if (showResults.value) {
+    if (isCorrectAnswer(idx)) return 'border-green-500 bg-green-50'
+    if (currentMultiSelection.value.has(idx)) return 'border-red-500 bg-red-50'
+    return 'border-gray-200 bg-gray-50 opacity-70'
   }
+  return currentMultiSelection.value.has(idx)
+    ? 'border-blue-500 bg-blue-50'
+    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+}
+
+const getMultiBadgeClass = (idx) => {
+  if (showResults.value) {
+    if (isCorrectAnswer(idx)) return 'border-green-500 bg-green-500 text-white'
+    if (currentMultiSelection.value.has(idx)) return 'border-red-500 bg-red-500 text-white'
+    return 'border-gray-300 text-gray-600'
+  }
+  return currentMultiSelection.value.has(idx)
+    ? 'border-blue-500 bg-blue-500 text-white'
+    : 'border-gray-300 text-gray-600'
+}
+
+const getQuestionType = (type) => {
+  const types = { essay: '简答题', single: '单选题', multiple: '多选题', judge: '判断题' }
   return types[type] || '单选题'
 }
 
 const formatTime = (seconds) => {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 onUnmounted(() => {
-  if (timer) {
-    clearInterval(timer)
-  }
+  if (timer) clearInterval(timer)
 })
 </script>

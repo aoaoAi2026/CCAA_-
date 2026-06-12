@@ -180,10 +180,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { wrongApi } from '../utils/request.js'
-import { useAuthStore, useToastStore } from '../stores/index.js'
+import { useToastStore } from '../stores/index.js'
 
-const labels = ['A', 'B', 'C', 'D']
-const auth = useAuthStore()
+const labels = ['A', 'B', 'C', 'D', 'E', 'F']
 const toast = useToastStore()
 
 const items = ref([])
@@ -194,12 +193,7 @@ const practiceList = ref([])
 async function load() {
   loading.value = true
   try {
-    if (auth.isLogin) {
-      items.value = await wrongApi.list()
-    } else {
-      const local = JSON.parse(localStorage.getItem('wrong_notebook_local') || '[]')
-      items.value = local
-    }
+    items.value = await wrongApi.list()
   } catch (e) {
     toast.show('加载错题失败：' + e.message, 'error')
     items.value = []
@@ -255,50 +249,23 @@ async function submitPracticeAnswer(item) {
   const isCorrect = item.practiceSelected === item.correct_answer
   item.practiceIsCorrect = isCorrect
   
-  if (auth.isLogin && item.id) {
-    try {
-      const result = await wrongApi.answer(item.id, { is_correct: isCorrect })
-      if (result.removed) {
-        item.practiceRemoved = true
-        item.practiceMessage = result.message
-        // 从错题列表中移除
-        items.value = items.value.filter((x) => x.id !== item.id)
-        toast.show('🎉 连续答对3次，已从错题本中移除！', 'success')
-      } else {
-        item.practiceMessage = result.message
-        if (isCorrect) {
-          item.consecutive_correct = result.consecutive_correct
-        } else {
-          item.consecutive_correct = 0
-        }
-      }
-    } catch (e) {
-      item.practiceMessage = '网络错误：' + e.message
-    }
-  } else {
-    // 未登录用户，本地记录
-    if (isCorrect) {
-      const newCount = (item.consecutive_correct || 0) + 1
-      if (newCount >= 3) {
-        item.practiceRemoved = true
-        item.consecutive_correct = newCount
-        item.practiceMessage = '已连续3次答对，从错题本中移除！'
-        // 从本地存储中移除
-        const local = JSON.parse(localStorage.getItem('wrong_notebook_local') || '[]')
-        const idx = local.findIndex((x, i) => (x.id === item.id) || (x.question === item.question))
-        if (idx >= 0) {
-          local.splice(idx, 1)
-          localStorage.setItem('wrong_notebook_local', JSON.stringify(local))
-        }
-        items.value = items.value.filter((x, i) => !(x.id === item.id) && !(x.question === item.question))
-      } else {
-        item.consecutive_correct = newCount
-        item.practiceMessage = `已连续答对${newCount}次，还需${3 - newCount}次即可移除`
-      }
+  try {
+    const result = await wrongApi.answer(item.id, { is_correct: isCorrect })
+    if (result.removed) {
+      item.practiceRemoved = true
+      item.practiceMessage = result.message
+      items.value = items.value.filter((x) => x.id !== item.id)
+      toast.show('连续答对3次，已从错题本中移除', 'success')
     } else {
-      item.consecutive_correct = 0
-      item.practiceMessage = '回答错误，已重置连续正确次数'
+      item.practiceMessage = result.message
+      if (isCorrect) {
+        item.consecutive_correct = result.consecutive_correct
+      } else {
+        item.consecutive_correct = 0
+      }
     }
+  } catch (e) {
+    item.practiceMessage = '保存练习结果失败：' + e.message
   }
   
   item.practiceSubmitted = true
@@ -317,27 +284,23 @@ const practiceRemovedCount = computed(() => {
 })
 
 async function removeItem(id) {
-  if (auth.isLogin) {
-    try { await wrongApi.remove(id) } catch (e) { return toast.show('删除失败', 'error') }
-    items.value = items.value.filter((x) => x.id !== id)
-  } else {
-    items.value = items.value.filter((x, idx) => idx !== id)
-    localStorage.setItem('wrong_notebook_local', JSON.stringify(items.value))
+  try {
+    await wrongApi.remove(id)
+  } catch (e) {
+    return toast.show('删除失败', 'error')
   }
+  items.value = items.value.filter((x) => x.id !== id)
   toast.show('已移除', 'success')
 }
 
 async function clearAll() {
   if (!confirm('确定要清空所有错题吗？')) return
-  if (auth.isLogin) {
-    try {
-      await Promise.all(items.value.map((x) => wrongApi.remove(x.id)))
-    } catch (e) {
-      return toast.show('清空失败', 'error')
-    }
+  try {
+    await wrongApi.clearAll()
+  } catch (e) {
+    return toast.show('清空失败', 'error')
   }
   items.value = []
-  localStorage.setItem('wrong_notebook_local', '[]')
   toast.show('已清空错题本', 'success')
 }
 

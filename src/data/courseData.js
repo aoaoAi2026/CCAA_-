@@ -69,7 +69,7 @@ export const courseData = {
             '合格评定在NQI中的作用',
             '我国的NQI体系'
           ],
-          tips: 'NQI四要素（计量、标准、认证认可、检验检测）和三大属性（技术属性、生产属性、贸易属性）是必背考点。'
+          tips: 'NQI三大核心要素（计量、标准、合格评定）和三大属性（技术属性、生产属性、贸易属性）是必背考点。注意：合格评定包含认证、认可、检验、检测等活动。'
         },
         {
           id: 4,
@@ -147,7 +147,7 @@ export const courseData = {
     {
       id: 2,
       name: '第二章 审核通用知识',
-      icon: 'clipboard-check',
+      icon: 'clipboard-list',
       scoreWeight: '约40分',
       hours: 30,
       learningObjectives: [
@@ -457,10 +457,10 @@ export const courseData = {
     totalDays: 40,
     totalHours: 100,
     phases: [
-      { name: '第一阶段：打牢基础', days: '1-14', focus: '第一章 合格评定基础知识', hours: '约35小时' },
-      { name: '第二阶段：审核进阶', days: '15-25', focus: '第二章 审核通用知识', hours: '约30小时' },
-      { name: '第三阶段：法规巩固', days: '26-35', focus: '第三章 法律法规知识', hours: '约25小时' },
-      { name: '第四阶段：综合提升', days: '36-40', focus: '第四章 + 总复习', hours: '约10小时' }
+      { id: 1, name: '第一阶段：打牢基础', days: '1-14', focus: '第一章 合格评定基础知识', hours: '约35小时', icon: 'book-open', description: '从合格评定基础概念入手，系统学习NQI、工具箱、功能法、认证制度和认可概念，打好扎实的理论基础。', duration: '约35小时' },
+      { id: 2, name: '第二阶段：审核进阶', days: '15-25', focus: '第二章 审核通用知识', hours: '约30小时', icon: 'clipboard-list', description: '深入学习审核概念与原则、审核方案与计划、审核技术、典型审核流程和认证人员能力要求。', duration: '约30小时' },
+      { id: 3, name: '第三阶段：法规巩固', days: '26-35', focus: '第三章 法律法规知识', hours: '约25小时', icon: 'scale', description: '掌握《认证认可条例》及其他相关法律法规的核心内容，注意区分法律法规之间的联系和区别。', duration: '约25小时' },
+      { id: 4, name: '第四阶段：综合提升', days: '36-40', focus: '第四章 + 总复习', hours: '约10小时', icon: 'award', description: '了解CCAA和认证人员注册管理要求，全面回顾前三个阶段的核心知识点，进行模拟考试巩固。', duration: '约10小时' }
     ]
   }
 }

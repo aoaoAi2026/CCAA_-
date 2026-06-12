@@ -79,6 +79,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { BookOpen, Plus, Trash2, FileText } from 'lucide-vue-next'
+import { useAuthStore } from '../stores/index.js'
 
 const showAddNote = ref(false)
 const notes = ref([])
@@ -88,8 +89,17 @@ const newNote = ref({
   createdAt: ''
 })
 
+function getNotesKey() {
+  try {
+    const auth = useAuthStore()
+    return 'learning_notes_' + (auth.user?.id || 'guest')
+  } catch (e) {
+    return 'learning_notes_guest'
+  }
+}
+
 onMounted(() => {
-  const saved = localStorage.getItem('learning_notes')
+  const saved = localStorage.getItem(getNotesKey())
   if (saved) {
     notes.value = JSON.parse(saved)
   }
@@ -120,7 +130,7 @@ const deleteNote = (index) => {
 }
 
 const saveNotes = () => {
-  localStorage.setItem('learning_notes', JSON.stringify(notes.value))
+  localStorage.setItem(getNotesKey(), JSON.stringify(notes.value))
 }
 
 const formatDate = (dateStr) => {

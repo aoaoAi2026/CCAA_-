@@ -195,7 +195,10 @@ const markingComplete = ref(false)
 const knowledgeError = ref('')
 
 function loadCompleted() {
-  const local = JSON.parse(localStorage.getItem('completed_topics_' + chapterId.value) || '[]')
+  // 多用户隔离：按用户ID存储
+  const uid = auth.user?.id || 'guest'
+  const key = 'completed_topics_chapter' + chapterId.value + '_' + uid
+  const local = JSON.parse(localStorage.getItem(key) || '[]')
   completedTopics.value = Array.isArray(local) ? local : []
 }
 
@@ -208,11 +211,19 @@ onMounted(async () => {
       const ids = (rows || []).map((r) => Number(r.topic_id)).filter((n) => !Number.isNaN(n))
       const merged = new Set([...completedTopics.value, ...ids])
       completedTopics.value = [...merged]
+      // 同步回 localStorage
+      saveCompleted()
     } catch (e) {
-      console.warn('拉取服务端章节进度失败:', e.message)
+      console.warn('拉取章节进度失败:', e.message)
     }
   }
 })
+
+function saveCompleted() {
+  const uid = auth.user?.id || 'guest'
+  const key = 'completed_topics_chapter' + chapterId.value + '_' + uid
+  localStorage.setItem(key, JSON.stringify(completedTopics.value))
+}
 
 // 路由参数变化时重置所有状态
 watch(chapterId, (newId, oldId) => {
@@ -313,9 +324,26 @@ const renderPointContent = (topic, point) => {
     }
   }
   
-  // 如果仍然没有匹配，显示整个章节的学习内容摘要
-  if (!matchedPlan && chapterContent.dailyPlans && chapterContent.dailyPlans.length > 0) {
-    matchedPlan = chapterContent.dailyPlans[0]
+  // 如果没有匹配，按 day 序号匹配 topic 编号
+  if (!matchedPlan) {
+    const dayNum = topic?.id || 1
+    for (const dayPlan of chapterContent.dailyPlans || []) {
+      if (!dayPlan.content) continue
+      if (dayPlan.day === dayNum) {
+        matchedPlan = dayPlan
+        break
+      }
+    }
+  }
+  
+  // 最终回退：显示本章第一个有内容的学习计划
+  if (!matchedPlan) {
+    for (const dayPlan of chapterContent.dailyPlans || []) {
+      if (dayPlan.content) {
+        matchedPlan = dayPlan
+        break
+      }
+    }
   }
   
   if (matchedPlan && matchedPlan.content) {
@@ -350,7 +378,7 @@ const markTopicComplete = async (topic) => {
   markingComplete.value = true
   
   try {
-    // 从后端获取该章节的最新练习成绩
+    // 获取该章节的最新练习成绩
     let score = 0
     try {
       const result = await practiceApi.getScore(chapterId.value)
@@ -366,6 +394,7 @@ const markTopicComplete = async (topic) => {
     
     if (!completedTopics.value.includes(topic.id)) {
       completedTopics.value = [...completedTopics.value, topic.id]
+      saveCompleted()
     }
     if (isLogin.value) {
       try {
@@ -374,8 +403,10 @@ const markTopicComplete = async (topic) => {
           topic_id: topic.id,
           topic_name: topic.name
         })
+        // 更新用户积分显示
+        await auth.refreshProfile()
       } catch (e) {
-        console.warn('服务端记录进度失败:', e.message)
+        console.warn('记录进度失败:', e.message)
       }
     }
   } finally {

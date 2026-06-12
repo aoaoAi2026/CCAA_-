@@ -1,0 +1,17 @@
+export const motivationalQuotes = [
+  { text: '学习不是填满水桶，而是点燃火焰。', author: '叶芝' },
+  { text: '今天的学习，是明天的底气。', author: '' },
+  { text: '知识就是力量，但行动才是钥匙。', author: '' },
+  { text: '不积跬步，无以至千里；不积小流，无以成江海。', author: '荀子' },
+  { text: '坚持是成功最大的秘诀。', author: '' },
+  { text: '每一分努力都在为你的审核员之路添砖加瓦。', author: '' },
+  { text: '合格评定的核心，你来掌握！', author: '' },
+  { text: '弄懂了NQI，你就赢了40分！', author: '' },
+  { text: '七项审核原则背下来，多选题不再怕。', author: '' },
+  { text: '距离拿证，只差你的坚持。', author: '' },
+  { text: '考证路上，你并不孤单。', author: '' },
+  { text: '把标准装进脑袋，把证书拿在手里。', author: '' },
+  { text: '今天的努力是明天的合格评定！', author: '' },
+  { text: '审核员之路，从每一个知识点开始。', author: '' },
+  { text: '再小的进步，也是前进。', author: '' },
+]

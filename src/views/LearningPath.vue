@@ -11,7 +11,7 @@
 
         <div class="space-y-8">
           <div 
-            v-for="(phase, index) in courseData.learningPhases" 
+            v-for="(phase, index) in courseData.studyPlan.phases" 
             :key="phase.id"
             class="relative"
           >
@@ -129,11 +129,12 @@ const getIcon = (iconName) => {
 }
 
 const getPhaseChapters = (phaseIndex) => {
+  // 4个阶段对应4个章节：第1阶段→第1章，第2阶段→第2章，以此类推
   const chapterRanges = [
-    [0, 1],  
-    [2, 3],  
-    [4, 5],  
-    [6, 7]   
+    [0, 0],  // 第一阶段：第1章
+    [1, 1],  // 第二阶段：第2章
+    [2, 2],  // 第三阶段：第3章
+    [3, 3]   // 第四阶段：第4章
   ]
   const range = chapterRanges[phaseIndex] || [0, courseData.chapters.length - 1]
   return courseData.chapters.slice(range[0], range[1] + 1)

@@ -126,7 +126,7 @@
               <div class="flex items-center justify-between">
                 <div>
                   <h3 class="font-semibold text-gray-800">
-                    {{ yearInfo.label }}认证通用基础真题
+                    {{ yearInfo.label.replace('-', '年') }}月认证通用基础真题
                     <span v-if="yearInfo.isMock" class="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">模拟题</span>
                   </h3>
                   <p class="text-gray-500 text-sm">{{ yearInfo.questions }}道题 | {{ yearInfo.duration }}分钟 | 及格线: {{ yearInfo.passingScore }}分</p>
@@ -266,28 +266,14 @@ const availableYears = computed(() => {
   const years = []
   Object.keys(pastExamsData).forEach(key => {
     const data = pastExamsData[key]
-    if (data.months) {
-      // 有多个考试月份
-      data.months.forEach(month => {
-        years.push({
-          key: `${key}-${month}`,
-          label: `${key}年${month}月`,
-          questions: data.questions,
-          duration: data.duration,
-          passingScore: data.passingScore,
-          isMock: data.isMock
-        })
-      })
-    } else {
-      years.push({
-        key: key,
-        label: `${key}年`,
-        questions: data.questions,
-        duration: data.duration,
-        passingScore: data.passingScore,
-        isMock: data.isMock
-      })
-    }
+    years.push({
+      key: key,
+      label: key,
+      questions: data.questions,
+      duration: data.duration,
+      passingScore: data.passingScore,
+      isMock: data.isMock
+    })
   })
   return years.sort((a, b) => b.key.localeCompare(a.key))
 })

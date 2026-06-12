@@ -71,11 +71,11 @@
           <div v-else class="grid grid-cols-3 gap-3">
             <div
               v-for="badge in achievements"
-              :key="badge.badge_key || badge.id"
+              :key="badge.id"
               class="p-4 border-2 rounded-xl text-center bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200"
             >
               <div class="text-3xl mb-2">🏆</div>
-              <div class="text-sm font-medium text-gray-800">{{ badge.badge_name }}</div>
+              <div class="text-sm font-medium text-gray-800">{{ badge.name }}</div>
               <div v-if="badge.description" class="text-xs text-gray-500 mt-1">{{ badge.description }}</div>
             </div>
           </div>
@@ -92,8 +92,27 @@
               :key="s.session_date"
               class="flex items-center justify-between py-2 border-b last:border-0"
             >
-              <div class="text-sm text-gray-700">{{ s.session_date }}</div>
+              <div class="flex items-center">
+                <div class="text-sm text-gray-700">{{ s.session_date }}</div>
+                <span v-if="s.questions_answered" class="ml-2 text-xs text-gray-400">{{ s.questions_answered }}题</span>
+              </div>
               <div class="text-sm text-blue-600">{{ s.duration_minutes }} 分钟</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 学习趋势（近7天） -->
+        <div class="bg-white rounded-2xl shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">学习趋势（近7天）</h2>
+          <div v-if="weeklyData.length === 0" class="text-sm text-gray-500 py-4 text-center">暂无数据</div>
+          <div v-else class="flex items-end justify-between gap-2 h-24">
+            <div v-for="(day, idx) in weeklyData" :key="idx" class="flex-1 flex flex-col items-center">
+              <div 
+                class="w-full rounded-t-md transition-all duration-300"
+                :style="{ height: day.height + '%', backgroundColor: day.color }"
+                :title="day.minutes + '分钟'"
+              ></div>
+              <div class="text-xs text-gray-400 mt-1">{{ day.label }}</div>
             </div>
           </div>
         </div>
@@ -150,11 +169,41 @@ const nextLevelPct = computed(() => {
   return Math.min(100, Math.round(((points - thisLvStart) / (nextLvStart - thisLvStart)) * 100))
 })
 
+// 近7天学习趋势
+const weeklyData = computed(() => {
+  const days = []
+  const now = new Date()
+  const dayLabels = ['日', '一', '二', '三', '四', '五', '六']
+  const sessionsData = sessions.value || []
+  
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    const dateStr = d.toISOString().slice(0, 10)
+    const dayIndex = d.getDay()
+    const session = sessionsData.find(s => s.session_date === dateStr)
+    const minutes = session?.duration_minutes || 0
+    const maxMin = Math.max(...sessionsData.map(s => s.duration_minutes || 0), 1)
+    days.push({
+      label: dayLabels[dayIndex],
+      minutes,
+      height: Math.max(5, (minutes / maxMin) * 100),
+      color: minutes > 0 ? '#3b82f6' : '#e5e7eb'
+    })
+  }
+  return days
+})
+
 function getChapterCompleted(chapterId) {
-  return (
-    chapterStatsMap.value[chapterId] ||
-    JSON.parse(localStorage.getItem('completed_topics_' + chapterId) || '[]').length
-  )
+  if (chapterStatsMap.value[chapterId]) return chapterStatsMap.value[chapterId]
+  // 兼容旧格式和新格式
+  const uid = auth.user?.id || 'guest'
+  const newKey = 'completed_topics_chapter' + chapterId + '_' + uid
+  const oldKey = 'completed_topics_' + chapterId
+  const newData = JSON.parse(localStorage.getItem(newKey) || '[]')
+  if (newData.length > 0) return newData.length
+  const oldData = JSON.parse(localStorage.getItem(oldKey) || '[]')
+  return oldData.length
 }
 
 function getChapterPct(chapterId) {
@@ -169,18 +218,25 @@ async function refresh() {
   try {
     await auth.refreshProfile()
     const s = await progressStore.loadSummary()
-    if (s) summary.value = s
+    if (s) {
+      summary.value = {
+        completedTopics: s.completedTopics || s.completed_topics || 0,
+        wrongCount: s.wrongCount || 0,
+        badges: s.badges || 0,
+        total_points: s.total_points || 0
+      }
+    }
     const rows = await progressStore.loadChapters()
     const map = {}
     ;(rows || []).forEach((r) => {
-      map[r.chapter_id] = r.topic_count || 0
+      map[r.chapter_id] = r.completed || 0
     })
     chapterStatsMap.value = map
     try {
       achievements.value = await achievementApi.list()
     } catch (e) { achievements.value = [] }
     try {
-      sessions.value = await sessionApi.list()
+      sessions.value = (await sessionApi.list()).slice(0, 10)
     } catch (e) { sessions.value = [] }
   } finally {
     loading.value = false

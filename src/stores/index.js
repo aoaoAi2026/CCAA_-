@@ -91,15 +91,27 @@ export const useAuthStore = defineStore('auth', {
       this.clearUserData();
     },
     clearUserData() {
-      // 清除错题本本地缓存
+      // 清除旧版错题本本地缓存
       localStorage.removeItem('wrongNotebook');
       localStorage.removeItem('wrong_notebook_local');
       // 清除学习笔记
       localStorage.removeItem('learning_notes');
-      // 清除章节练习成绩
-      for (let i = 1; i <= 4; i++) {
-        localStorage.removeItem('practice_score_chapter' + i);
-        localStorage.removeItem('completed_topics_chapter' + i);
+      // 清除章节练习成绩和已完成知识点（按用户隔离的key）
+      const uid = this.user?.id
+      if (uid) {
+        for (let i = 1; i <= 4; i++) {
+          localStorage.removeItem('practice_score_chapter' + i);
+          localStorage.removeItem('completed_topics_chapter' + i);
+          localStorage.removeItem('completed_topics_chapter' + i + '_' + uid);
+        }
+        // 清除 request.js 中的用户数据
+        localStorage.removeItem('app_progress_' + uid);
+        localStorage.removeItem('app_daily_' + uid);
+        localStorage.removeItem('app_wrong_' + uid);
+        localStorage.removeItem('app_ach_' + uid);
+        localStorage.removeItem('app_sess_' + uid);
+        localStorage.removeItem('app_practice_' + uid);
+        localStorage.removeItem('app_stats_' + uid);
       }
       // 清除学习统计
       localStorage.removeItem('learning_stats');
