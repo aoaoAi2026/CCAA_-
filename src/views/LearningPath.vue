@@ -1,13 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 dark:bg-slate-900 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-12">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">学习路线</h1>
-        <p class="text-gray-600">按照科学的学习路径，循序渐进掌握认通基知识</p>
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">学习路线</h1>
+        <p class="text-gray-600 dark:text-slate-300">按照科学的学习路径，循序渐进掌握认通基知识</p>
       </div>
 
       <div class="relative">
-        <div class="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 hidden md:block"></div>
+        <div class="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700 hidden md:block"></div>
 
         <div class="space-y-8">
           <div 

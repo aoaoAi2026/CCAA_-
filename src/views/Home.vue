@@ -4,7 +4,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div v-if="isLogin && user" class="mb-6 p-4 bg-white/10 rounded-xl flex items-center justify-between">
           <div class="flex items-center">
-            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">{{ avatarChar }}</div>
+            <div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold mr-3">{{ avatarChar }}</div>
             <div>
               <div class="font-semibold">欢迎，{{ user.nickname || user.username }}</div>
               <div class="text-xs text-blue-100">Lv.{{ user.level || 1 }} · 积分 {{ user.total_points || 0 }} · 学习 {{ user.study_hours || 0 }}小时</div>
@@ -12,7 +12,7 @@
           </div>
           <div class="flex gap-2 text-sm">
             <router-link to="/profile" class="px-3 py-1.5 bg-white/20 rounded-lg hover:bg-white/30">个人中心</router-link>
-            <router-link to="/daily-plan" class="px-3 py-1.5 bg-white text-purple-700 rounded-lg hover:bg-blue-50">继续学习</router-link>
+            <router-link to="/daily-plan" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-400 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-700">继续学习</router-link>
           </div>
         </div>
         <div class="flex flex-col md:flex-row items-center justify-between">
@@ -31,7 +31,7 @@
               <router-link 
                 v-if="isLogin"
                 to="/knowledge/1"
-                class="px-8 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center"
+                class="px-8 py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold rounded-lg hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
               >
                 <Play class="w-5 h-5 mr-2" />
                 开始学习
@@ -39,7 +39,7 @@
               <router-link 
                 v-else
                 to="/login?redirect=/knowledge/1"
-                class="px-8 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center"
+                class="px-8 py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold rounded-lg hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
               >
                 <Play class="w-5 h-5 mr-2" />
                 登录后开始学习
@@ -120,24 +120,24 @@
     </section>
 
     <!-- 今日学习目标 -->
-    <section class="py-6 bg-white border-b">
+    <section class="py-6 bg-white dark:bg-slate-900 border-b dark:border-slate-700">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-5 flex items-center justify-between flex-wrap gap-4">
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:bg-slate-800 rounded-2xl p-5 flex items-center justify-between flex-wrap gap-4">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
               <Target class="w-6 h-6 text-white" />
             </div>
             <div>
-              <div class="text-sm text-gray-500">今日学习进度</div>
-              <div class="text-lg font-bold text-gray-800">{{ dailyStats.completed }} / {{ dailyStats.goal }} 个知识点</div>
+              <div class="text-sm text-gray-500 dark:text-slate-400">今日学习进度</div>
+              <div class="text-lg font-bold text-gray-800 dark:text-slate-100">{{ dailyStats.completed }} / {{ dailyStats.goal }} 个知识点</div>
             </div>
           </div>
           <div class="flex items-center space-x-4">
-            <div class="w-40 bg-gray-200 rounded-full h-3">
+            <div class="w-40 bg-gray-200 dark:bg-slate-700 rounded-full h-3">
               <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500" 
                    :style="{ width: dailyStats.percent + '%' }"></div>
             </div>
-            <span class="text-sm font-bold text-blue-600 w-10">{{ dailyStats.percent }}%</span>
+            <span class="text-sm font-bold text-blue-600 dark:text-blue-400 w-10">{{ dailyStats.percent }}%</span>
             <router-link to="/daily-plan" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
               去学习
             </router-link>
@@ -147,16 +147,16 @@
     </section>
 
     <!-- 激励语录 + 连续打卡 -->
-    <section class="py-4 bg-white border-b">
+    <section class="py-4 bg-white dark:bg-slate-900 border-b dark:border-slate-700">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div class="flex items-center space-x-3">
             <span class="text-2xl">{{ randomEmoji }}</span>
-            <p class="text-gray-600 italic text-sm max-w-md">「{{ currentQuote }}」</p>
+            <p class="text-gray-600 dark:text-slate-300 italic text-sm max-w-md">「{{ currentQuote }}」</p>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="text-sm text-gray-500">学习连续</span>
-            <span class="inline-flex items-center px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-bold">
+            <span class="text-sm text-gray-500 dark:text-slate-400">学习连续</span>
+            <span class="inline-flex items-center px-3 py-1 bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-400 rounded-full text-sm font-bold">
               🔥 {{ studyStreak }} 天
             </span>
           </div>
@@ -164,11 +164,11 @@
       </div>
     </section>
 
-    <section class="py-16 bg-white">
+    <section class="py-16 bg-white dark:bg-slate-900">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-gray-800 mb-4">学习数据概览</h2>
-          <p class="text-gray-600">追踪您的学习进度，见证成长历程</p>
+          <h2 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">学习数据概览</h2>
+          <p class="text-gray-600 dark:text-slate-300">追踪您的学习进度，见证成长历程</p>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white card-hover">
@@ -208,19 +208,19 @@
     </section>
 
     <!-- 番茄钟 + 趣味知识 -->
-    <section class="py-8 bg-white">
+    <section class="py-8 bg-white dark:bg-slate-900">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-3 gap-6">
           <div class="md:col-span-2">
             <PomodoroTimer />
           </div>
-          <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-100">
+          <div class="bg-gradient-to-br from-yellow-50 to-orange-50 dark:bg-slate-800 rounded-2xl p-6 border border-yellow-100 dark:border-slate-700">
             <div class="flex items-center mb-3">
-              <Lightbulb class="w-5 h-5 text-yellow-600 mr-2" />
-              <h3 class="font-semibold text-gray-800">每日一学</h3>
+              <Lightbulb class="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+              <h3 class="font-semibold text-gray-800 dark:text-slate-100">每日一学</h3>
             </div>
-            <p class="text-gray-600 text-sm leading-relaxed">{{ dailyTip }}</p>
-            <button @click="refreshTip" class="mt-3 text-xs text-blue-600 hover:underline flex items-center">
+            <p class="text-gray-600 dark:text-slate-300 text-sm leading-relaxed">{{ dailyTip }}</p>
+            <button @click="refreshTip" class="mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center">
               <RefreshCw class="w-3 h-3 mr-1" /> 换一条
             </button>
           </div>
@@ -228,61 +228,136 @@
       </div>
     </section>
 
-    <section class="py-16 bg-gray-50">
+    <!-- 快捷功能入口 -->
+    <section class="py-6 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-slate-100 mb-5 flex items-center">
+          <Rocket class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+          快捷功能
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <router-link to="/game" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <Gamepad2 class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">趣味闯关</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">章节大挑战</p>
+          </router-link>
+
+          <router-link to="/practice/1" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-green-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <FileQuestion class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">章节练习</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">多题型巩固</p>
+          </router-link>
+
+          <router-link to="/wrong-notebook" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-red-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <AlertCircle class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">错题本</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">消灭盲区</p>
+          </router-link>
+
+          <router-link to="/mock-exam" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-orange-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <ScrollText class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">模拟考试</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">全真测试</p>
+          </router-link>
+
+          <router-link to="/resources" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <FolderOpen class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">资源库</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">大纲/真题</p>
+          </router-link>
+
+          <router-link to="/progress" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-teal-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <TrendingUp class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">学习进度</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">追踪成长</p>
+          </router-link>
+
+          <router-link to="/daily-plan" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-violet-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <CalendarDays class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">每日计划</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">40天攻略</p>
+          </router-link>
+
+          <router-link to="/learning-path" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 hover:border-sky-300 dark:hover:border-slate-500 transition-all group">
+            <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-500 rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <MapPin class="w-5 h-5 text-white" />
+            </div>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 text-sm">学习路线</h3>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-0.5">四阶段</p>
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 bg-gray-50 dark:bg-slate-900">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-gray-800 mb-4">学习路线</h2>
-          <p class="text-gray-600">循序渐进，系统掌握认通基知识</p>
+          <h2 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">学习路线</h2>
+          <p class="text-gray-600 dark:text-slate-300">循序渐进，系统掌握认通基知识</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div 
             v-for="phase in courseData.studyPlan.phases" 
             :key="phase.id"
-            class="bg-white rounded-xl p-6 shadow-md card-hover cursor-pointer"
+            class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-md card-hover cursor-pointer dark:border-slate-700"
             @click="$router.push('/learning-path')"
           >
             <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
               <component :is="getIcon(phase.icon)" class="w-7 h-7 text-white" />
             </div>
-            <h3 class="font-semibold text-lg text-gray-800 mb-2">{{ phase.name }}</h3>
-            <div class="flex items-center text-blue-600 text-sm mb-2">
+            <h3 class="font-semibold text-lg text-gray-800 dark:text-slate-100 mb-2">{{ phase.name }}</h3>
+            <div class="flex items-center text-blue-600 dark:text-blue-400 text-sm mb-2">
               <Clock class="w-4 h-4 mr-1" />
               {{ phase.duration }}
             </div>
-            <p class="text-gray-600 text-sm">{{ phase.description }}</p>
+            <p class="text-gray-600 dark:text-slate-300 text-sm">{{ phase.description }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="py-16 bg-white">
+    <section class="py-16 bg-white dark:bg-slate-900">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-gray-800 mb-4">章节内容</h2>
-          <p class="text-gray-600">覆盖认通基全部核心知识点</p>
+          <h2 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">章节内容</h2>
+          <p class="text-gray-600 dark:text-slate-300">覆盖认通基全部核心知识点</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div 
             v-for="chapter in courseData.chapters" 
             :key="chapter.id"
-            class="bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer"
+            class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:border-blue-400 dark:hover:border-slate-500 hover:shadow-lg transition-all cursor-pointer"
           >
             <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <component :is="getIcon(chapter.icon)" class="w-6 h-6 text-blue-600" />
+              <div class="w-12 h-12 bg-blue-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                <component :is="getIcon(chapter.icon)" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <span class="text-gray-400 text-sm flex items-center">
+              <span class="text-gray-400 dark:text-slate-400 text-sm flex items-center">
                 <Clock class="w-4 h-4 mr-1" />
                 {{ chapter.hours }}h
               </span>
             </div>
-            <h3 class="font-semibold text-gray-800 mb-3 line-clamp-2">{{ chapter.name }}</h3>
-            <p class="text-gray-500 text-sm mb-4 line-clamp-2">{{ chapter.summary }}</p>
+            <h3 class="font-semibold text-gray-800 dark:text-slate-100 mb-3 line-clamp-2">{{ chapter.name }}</h3>
+            <p class="text-gray-500 dark:text-slate-400 text-sm mb-4 line-clamp-2">{{ chapter.summary }}</p>
             <div class="flex justify-between items-center">
-              <span class="text-gray-400 text-sm">{{ chapter.topics.length }} 个知识点</span>
+              <span class="text-gray-400 dark:text-slate-400 text-sm">{{ chapter.topics.length }} 个知识点</span>
               <router-link 
                 :to="`/knowledge/${chapter.id}`"
-                class="text-blue-600 text-sm font-medium hover:text-blue-700 flex items-center"
+                class="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 flex items-center"
               >
                 开始学习
                 <ArrowRight class="w-4 h-4 ml-1" />
@@ -301,7 +376,7 @@
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <router-link 
               to="/knowledge/1"
-              class="px-8 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+              class="px-8 py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold rounded-lg hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
             >
               立即开始学习
             </router-link>
@@ -342,7 +417,15 @@ import {
   Scale,
   Shield,
   Lightbulb,
-  RefreshCw
+  RefreshCw,
+  Gamepad2,
+  FileQuestion,
+  AlertCircle,
+  ScrollText,
+  FolderOpen,
+  TrendingUp,
+  CalendarDays,
+  MapPin
 } from 'lucide-vue-next'
 import { courseData } from '../data/courseData'
 import { motivationalQuotes } from '../data/quotes.js'

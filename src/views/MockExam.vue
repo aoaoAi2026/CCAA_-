@@ -174,6 +174,18 @@
                   <pre class="whitespace-pre-wrap text-green-700 text-sm">{{ currentQuestion.answer }}</pre>
                 </div>
                 <p class="text-green-700 mt-3"><strong>解析：</strong>{{ currentQuestion.explanation }}</p>
+                <!-- 简答题自我评价 -->
+                <div v-if="showResults && essaySelfEval[currentQuestionIndex] === undefined" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p class="text-yellow-800 text-sm font-medium mb-3">请对照参考答案，评价你的答案：</p>
+                  <div class="flex space-x-3">
+                    <button @click="essaySelfEval = {...essaySelfEval, [currentQuestionIndex]: true}" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center justify-center">
+                      <CheckCircle class="w-4 h-4 mr-1" />答对了
+                    </button>
+                    <button @click="essaySelfEval = {...essaySelfEval, [currentQuestionIndex]: false}" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center justify-center">
+                      <XCircle class="w-4 h-4 mr-1" />答错了
+                    </button>
+                  </div>
+                </div>
               </template>
               
               <div v-if="currentQuestion.keyPoints" class="mt-3">
@@ -310,6 +322,7 @@ const currentQuestionIndex = ref(0)
 const userAnswers = ref({})          // 单选/判断答案
 const userMultiAnswers = ref({})     // 多选题答案 { index: [sorted array] }
 const userEssayAnswers = ref({})
+const essaySelfEval = ref({}) // 简答题自我评价 { [index]: true/false }
 const currentMultiSelection = ref(new Set()) // 当前多选题的选中状态
 const remainingTime = ref(0)
 const showResults = ref(false)
@@ -348,7 +361,9 @@ const score = computed(() => {
   
   examQuestions.value.forEach((q, idx) => {
     if (q.type === 'essay') {
-      totalEssayScore += q.score || 10
+      if (essaySelfEval.value[idx] === true) {
+        totalEssayScore += q.score || 10
+      }
       return
     }
     const isMulti = q.type === 'multiple' && Array.isArray(q.answer)
@@ -451,6 +466,7 @@ const startExam = (exam) => {
   userAnswers.value = {}
   userMultiAnswers.value = {}
   userEssayAnswers.value = {}
+  essaySelfEval.value = {}
   currentMultiSelection.value = new Set()
   currentQuestionIndex.value = 0
   showResults.value = false

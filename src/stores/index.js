@@ -191,3 +191,54 @@ export const useToastStore = defineStore('toast', {
     }
   }
 });
+
+// 主题 store（深色/浅色模式切换）
+const THEME_KEY = 'app_theme_v1';
+
+function getStoredTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function applyThemeClass(theme) {
+  const root = document.documentElement;
+  if (theme === 'dark') {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+}
+
+export const useThemeStore = defineStore('theme', {
+  state: () => {
+    const stored = getStoredTheme();
+    let mode = stored;
+    if (!mode) {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      mode = prefersDark ? 'dark' : 'light';
+    }
+    applyThemeClass(mode);
+    return { mode };
+  },
+  getters: {
+    isDark: (s) => s.mode === 'dark'
+  },
+  actions: {
+    setTheme(newMode) {
+      this.mode = newMode;
+      try {
+        localStorage.setItem(THEME_KEY, newMode);
+      } catch (e) {}
+      applyThemeClass(newMode);
+    },
+    toggle() {
+      this.setTheme(this.mode === 'dark' ? 'light' : 'dark');
+    },
+    init() {
+      applyThemeClass(this.mode);
+    }
+  }
+});

@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 dark:bg-slate-900 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between mb-8">
         <button 
           @click="$router.back()"
-          class="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+          class="flex items-center text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
           <ArrowLeft class="w-5 h-5 mr-2" />
           返回
@@ -174,22 +174,27 @@
         </div>
 
         <!-- 答案解析 -->
-        <div v-if="showResult" class="mt-6 p-6 rounded-xl" :class="isCorrect ? 'bg-green-50' : 'bg-red-50'">
+        <div v-if="showResult" class="mt-6 p-6 rounded-xl" :class="pendingEval ? 'bg-yellow-50' : (isCorrect ? 'bg-green-50' : 'bg-red-50')">
           <div class="flex items-center mb-4">
             <div 
               class="w-12 h-12 rounded-full flex items-center justify-center mr-4"
-              :class="isCorrect ? 'bg-green-500' : 'bg-red-500'"
+              :class="pendingEval ? 'bg-yellow-500' : (isCorrect ? 'bg-green-500' : 'bg-red-500')"
             >
-              <CheckCircle v-if="isCorrect && !autoAdvancing" class="w-6 h-6 text-white" />
+              <span v-if="pendingEval" class="text-white font-bold text-lg">?</span>
+              <CheckCircle v-else-if="isCorrect && !autoAdvancing" class="w-6 h-6 text-white" />
               <XCircle v-else-if="!isCorrect" class="w-6 h-6 text-white" />
               <span v-else class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             </div>
             <div>
-              <h3 class="font-semibold" :class="isCorrect ? 'text-green-800' : 'text-red-800'">
-                {{ isCorrect ? (autoAdvancing ? '回答正确！' : '回答正确！') : '回答错误' }}
+              <h3 class="font-semibold" :class="pendingEval ? 'text-yellow-800' : (isCorrect ? 'text-green-800' : 'text-red-800')">
+                <template v-if="pendingEval">请评价您的答案</template>
+                <template v-else-if="isCorrect && autoAdvancing">回答正确！</template>
+                <template v-else-if="isCorrect">回答正确！</template>
+                <template v-else>回答错误</template>
               </h3>
-              <p class="text-sm text-gray-600">
-                <template v-if="isCorrect && !autoAdvancing">自动跳转下一题...</template>
+              <p class="text-sm" :class="pendingEval ? 'text-yellow-700' : 'text-gray-600'">
+                <template v-if="pendingEval">请对照参考答案，评价自己的答案是否正确</template>
+                <template v-else-if="isCorrect && !autoAdvancing">自动跳转下一题...</template>
                 <template v-else-if="isCorrect && autoAdvancing">✅ 已自动跳转</template>
                 <template v-else>正确答案是：{{ formatCorrectAnswer(currentQuestion) }}</template>
               </p>
@@ -226,6 +231,18 @@
                 <ul class="mt-1">
                   <li v-for="(point, i) in currentQuestion.keyPoints" :key="i" class="text-gray-600 text-sm">• {{ point }}</li>
                 </ul>
+              </div>
+              <!-- 简答题自我评价 -->
+              <div v-if="essaySelfResults[currentIndex] === undefined" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-yellow-800 text-sm font-medium mb-3">请对照参考答案，给自己的答案打分：</p>
+                <div class="flex space-x-3">
+                  <button @click="selfEvalEssay(true)" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center justify-center">
+                    <CheckCircle class="w-4 h-4 mr-1" />答对了
+                  </button>
+                  <button @click="selfEvalEssay(false)" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center justify-center">
+                    <XCircle class="w-4 h-4 mr-1" />答错了
+                  </button>
+                </div>
               </div>
             </template>
           </div>
@@ -347,11 +364,13 @@ const showFinalResults = ref(false)
 const answers = ref([])              // 存储单选/判断答案（数值）
 const multiAnswers = ref([])        // 存储多选题答案（数组）
 const essayAnswers = ref({})
-const timeSpent = ref(0)
+const essaySelfResults = ref({})    // 简答题自评结果 { index: true/false }
 const practiceError = ref('')
 const wrongRecordedIndices = ref({})
 const autoAdvancing = ref(false)
 const autoAdvanceCountdown = ref(0)
+const timeSpent = ref(0)
+const essaySelfCorrect = ref(null)
 let timer = null
 let autoAdvanceTimer = null
 
@@ -410,11 +429,13 @@ function resetState() {
   selectedOption.value = null
   selectedOptions.value = new Set()
   essayAnswer.value = ''
+  essaySelfCorrect.value = null
   showResult.value = false
   showFinalResults.value = false
   answers.value = []
   multiAnswers.value = []
   essayAnswers.value = {}
+  essaySelfResults.value = {}
   timeSpent.value = 0
   wrongRecordedIndices.value = {}
 }
@@ -450,6 +471,7 @@ const isEssayQuestion = computed(() => currentQuestion.value?.type === 'essay')
 const isMultipleQuestion = computed(() => currentQuestion.value?.type === 'multiple')
 const isJudgeQuestion = computed(() => currentQuestion.value?.type === 'judge')
 const isLastQuestion = computed(() => currentIndex.value >= totalQuestions.value - 1)
+const pendingEval = computed(() => isEssayQuestion.value && showResult.value && essaySelfResults.value[currentIndex.value] === undefined)
 
 const getSelectedCount = computed(() => selectedOptions.value.size)
 
@@ -468,7 +490,11 @@ const difficultyClass = computed(() => {
 })
 
 const isCorrect = computed(() => {
-  if (isEssayQuestion.value) return true
+  if (isEssayQuestion.value) {
+    // 简答题：使用自我评价结果
+    const selfResult = essaySelfResults.value[currentIndex.value]
+    return selfResult === true
+  }
   if (isMultipleQuestion.value) {
     const userAns = multiAnswers.value[currentIndex.value]
     if (!userAns || !Array.isArray(userAns)) return false
@@ -484,7 +510,7 @@ const correctCount = computed(() => {
     const q = chapterQuestions.value[i]
     if (!q) continue
     if (q.type === 'essay') {
-      if (essayAnswers.value[i]) count++
+      if (essaySelfResults.value[i] === true) count++
       continue
     }
     if (q.type === 'multiple') {
@@ -515,6 +541,7 @@ const formatTime = (seconds) => {
 // 格式化正确答案显示
 function formatCorrectAnswer(q) {
   if (!q) return ''
+  if (q.type === 'essay') return '请查看参考答案'
   if (q.type === 'multiple') {
     const ans = q.answer || []
     return ans.map(i => optionLabels[i]).join('、')
@@ -541,8 +568,16 @@ const submitEssayAnswer = () => {
   essayAnswers.value[currentIndex.value] = essayAnswer.value
   showResult.value = true
   practiceError.value = ''
-  // 简答题默认正确，自动跳转
-  startAutoAdvance()
+}
+
+// 简答题自我评价
+const selfEvalEssay = async (correct) => {
+  essaySelfResults.value = { ...essaySelfResults.value, [currentIndex.value]: correct }
+  if (!correct) {
+    await recordWrongQuestion(currentIndex.value, essayAnswer.value)
+  } else {
+    startAutoAdvance()
+  }
 }
 
 // 单选题/判断题选择
@@ -683,7 +718,7 @@ function buildWrongPayload(question, userAnswer) {
 async function recordWrongQuestion(index, userAnswer) {
   if (wrongRecordedIndices.value[index]) return
   const question = chapterQuestions.value[index]
-  if (!question || question.type === 'essay') return
+  if (!question) return
   try {
     await wrongApi.add(buildWrongPayload(question, userAnswer))
     wrongRecordedIndices.value[index] = true
@@ -747,6 +782,7 @@ const restartPractice = () => {
   answers.value = []
   multiAnswers.value = []
   essayAnswers.value = {}
+  essaySelfResults.value = {}
   timeSpent.value = 0
   wrongRecordedIndices.value = {}
 }
