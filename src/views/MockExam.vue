@@ -497,8 +497,8 @@ const startExam = (exam) => {
   const totalMC = exam.questions - exam.essayCount
   const selectedChoice = shuffledChoice.slice(0, Math.min(totalMC, shuffledChoice.length))
   
-  // 随机抽取简答题
-  const allEssayQuestions = questions.essay || []
+  // 随机抽取简答题（含essayExtra）
+  const allEssayQuestions = [...(questions.essay || []), ...(questions.essayExtra || [])]
   const shuffledEssay = allEssayQuestions.sort(() => Math.random() - 0.5)
   const selectedEssay = shuffledEssay.slice(0, exam.essayCount).map(q => ({
     ...q, chapter_id: null, chapter_name: '简答题', question_type: q.type || 'essay'

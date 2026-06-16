@@ -159,6 +159,11 @@
         </div>
       </div>
     </div>
+
+    <!-- 学习笔记 -->
+    <div class="mt-8 max-w-4xl mx-auto px-2 sm:px-0">
+      <LearningNotes />
+    </div>
   </div>
 </template>
 
@@ -179,6 +184,7 @@ import {
 import { courseData } from '../data/courseData'
 import { detailedContent } from '../data/detailedContent'
 import { progressApi, practiceApi } from '../utils/request.js'
+import LearningNotes from '../components/LearningNotes.vue'
 import { useAuthStore } from '../stores/index.js'
 
 const route = useRoute()
